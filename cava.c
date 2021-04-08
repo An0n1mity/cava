@@ -1240,7 +1240,7 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
 void change_color(FILE* file, char* color_to_use, char* buffer_c, char* command, char* color){
           sprintf(command, "xrdb -query | grep '%s' | awk '{printf $NF}' >| color", color_to_use);
           system(command);
-          file = fopen("/home/an0n1mity/Downloads/cava/color", "r");
+          file = fopen("color", "r");
           fseek(file, 0, SEEK_SET);
           fread(buffer_c,8,1,file);
           strcpy(color, buffer_c);
