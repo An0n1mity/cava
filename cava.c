@@ -61,7 +61,8 @@
 #else
 #define GCC_UNUSED /* nothing */
 #endif
-
+void change_color(FILE* file, char* color_to_use, char* buffer_c, char* command, char* color);
+  
 pthread_mutex_t lock;
 // used by sig handler
 // needs to know output mode in order to clean up terminal
@@ -179,6 +180,7 @@ int main(int argc, char **argv) {
     char buffer_c[8];
     char color_to_use[8];
     char command[59];
+    int dynamic_color = 0;
     pthread_t p_thread;
     int thr_id GCC_UNUSED;
     float cut_off_frequency[256];
@@ -267,6 +269,7 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
             return 0;
 	case 'i':
 	    strcpy(color_to_use, argv[2]);
+	    dynamic_color = 1;
 	    break;
         default: // argument: no arguments; exit
             abort();
@@ -549,14 +552,9 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
 #ifdef NCURSES
             // output: start ncurses mode
             case OUTPUT_NCURSES:
-		sprintf(command, "xrdb -query | grep '%s' | awk '{printf $NF}' >| color", color_to_use);
-		//system("xrdb -query | grep '*color2' | awk '{printf $NF}' >| color");
-    		system(command);
-		file = fopen("/home/an0n1mity/Downloads/cava/color", "r");
-      		fseek(file, 0, SEEK_SET);
-                fread(buffer_c,8,1,file);
-                strcpy(p.color, buffer_c);       
-		fclose(file);
+		if(dynamic_color){
+			change_color(file, color_to_use, buffer_c, command, p.color);
+		}		
                 init_terminal_ncurses(p.color, p.bcolor, p.col, p.bgcol, p.gradient,
                                       p.gradient_count, p.gradient_colors, &width, &lines);
                 if (p.xaxis != NONE)
@@ -1238,3 +1236,13 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
         // fclose(fp);
     }
 }
+
+void change_color(FILE* file, char* color_to_use, char* buffer_c, char* command, char* color){
+          sprintf(command, "xrdb -query | grep '%s' | awk '{printf $NF}' >| color", color_to_use);
+          system(command);
+          file = fopen("/home/an0n1mity/Downloads/cava/color", "r");
+          fseek(file, 0, SEEK_SET);
+          fread(buffer_c,8,1,file);
+          strcpy(color, buffer_c);
+          fclose(file);
+  }
