@@ -52,6 +52,16 @@ void write_errorf(void *err, const char *fmt, ...) {
     va_end(args);
 }
 
+void change_color(FILE* file, char* color_to_use, char* buffer_c, char* command, char* color){
+	sprintf(command, "xrdb -query | grep '%s' | awk '{printf $NF}' >| color", color_to_use);
+    	system(command);
+	file = fopen("/home/an0n1mity/Downloads/cava/color", "r");
+      	fseek(file, 0, SEEK_SET);
+        fread(buffer_c,8,1,file);
+        strcpy(color, buffer_c);       
+	fclose(file);
+}
+
 int validate_color(char *checkColor, void *params, void *err) {
     struct config_params *p = (struct config_params *)params;
     struct error_s *error = (struct error_s *)err;
