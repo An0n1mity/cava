@@ -175,6 +175,10 @@ int *monstercat_filter(int *bars, int number_of_bars, int waves, double monsterc
 int main(int argc, char **argv) {
 
     // general: define variables
+    FILE *file;
+    char buffer_c[8];
+    char color_to_use[8];
+    char command[59];
     pthread_t p_thread;
     int thr_id GCC_UNUSED;
     float cut_off_frequency[256];
@@ -205,6 +209,7 @@ Visualize audio input in terminal. \n\
 \n\
 Options:\n\
 	-p          path to config file\n\
+	-i	    xressources color (ex: *color2)\n\
 	-v          print version\n\
 \n\
 Keys:\n\
@@ -246,7 +251,7 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
     sigaction(SIGUSR2, &action, NULL);
 
     // general: handle command-line arguments
-    while ((c = getopt(argc, argv, "p:vh")) != -1) {
+    while ((c = getopt(argc, argv, "p:vhi")) != -1) {
         switch (c) {
         case 'p': // argument: fifo path
             snprintf(configPath, sizeof(configPath), "%s", optarg);
@@ -260,6 +265,9 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
         case 'v': // argument: print version
             printf(PACKAGE " " VERSION "\n");
             return 0;
+	case 'i':
+	    strcpy(color_to_use, argv[2]);
+	    break;
         default: // argument: no arguments; exit
             abort();
         }
@@ -541,6 +549,14 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
 #ifdef NCURSES
             // output: start ncurses mode
             case OUTPUT_NCURSES:
+		sprintf(command, "xrdb -query | grep '%s' | awk '{printf $NF}' >| color", color_to_use);
+		//system("xrdb -query | grep '*color2' | awk '{printf $NF}' >| color");
+    		system(command);
+		file = fopen("/home/an0n1mity/Downloads/cava/color", "r");
+      		fseek(file, 0, SEEK_SET);
+                fread(buffer_c,8,1,file);
+                strcpy(p.color, buffer_c);       
+		fclose(file);
                 init_terminal_ncurses(p.color, p.bcolor, p.col, p.bgcol, p.gradient,
                                       p.gradient_count, p.gradient_colors, &width, &lines);
                 if (p.xaxis != NONE)
@@ -814,6 +830,7 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
 
                     if (output_mode == OUTPUT_NCURSES) {
 #ifdef NCURSES
+
                         if (center_frequency < 1000)
                             mvprintw(lines, n * (p.bar_width + p.bar_spacing) + rest, "%-4d",
                                      freq_floor);
@@ -832,7 +849,19 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
                         else
                             printf("%.1f", freq_kilohz);
 
-                        if (n < number_of_bars - 1)
+  #ifdef NCURSES
+			  
+			  if (center_frequency < 1000)
+                              mvprintw(lines, n * (p.bar_width + p.bar_spacing) + rest, "%-4d",
+                                       freq_floor);
+                          else if (center_frequency > 1000 && center_frequency < 10000)
+                              mvprintw(lines, n * (p.bar_width + p.bar_spacing) + rest, "%.2f",
+                                       freq_kilohz);
+                          else
+                              mvprintw(lines, n * (p.bar_width + p.bar_spacing) + rest, "%.1f",
+                                       freq_kilohz);
+  #endif                      
+			  if (n < number_of_bars - 1)
                             printf("\033[%dC", p.bar_width + p.bar_spacing - 4);
                     }
                 }
@@ -916,6 +945,7 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
                     if (!load_config(configPath, (void *)&p, 1, &error)) {
                         cleanup();
                         fprintf(stderr, "Error loading config. %s", error.message);
+
                         exit(EXIT_FAILURE);
                     }
                     resizeTerminal = true;
@@ -1131,7 +1161,7 @@ as of 0.4.0 all options are specified in config file, see in '/home/username/.co
                     rc = draw_terminal_ncurses(inAtty, lines, width, number_of_bars, p.bar_width,
                                                p.bar_spacing, rest, bars, previous_frame,
                                                p.gradient, x_axis_info);
-                    break;
+		    break;
 #endif
                 case OUTPUT_NONCURSES:
                     rc = draw_terminal_noncurses(inAtty, lines, width, number_of_bars, p.bar_width,
