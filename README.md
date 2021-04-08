@@ -400,7 +400,7 @@ Usage
 
     Options:
     	    -p          path to config file
-          -i          Xressource's color to use (*color1, ...)
+          -i          Xressource's color (*color1, ...)
     	    -v          print version
 
 
